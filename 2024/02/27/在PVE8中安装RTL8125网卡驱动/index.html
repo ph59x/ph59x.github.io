@@ -1,0 +1,277 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  
+  
+  <title>在PVE8中安装RTL8125网卡驱动 | Hexo</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+  <meta name="description" content="起因近期使用sensors命令查看CPU温度时，发现有一个核心的温度明显高于其他核心，连接数上升后温差更高。 排障获取网卡地址： 1lspci | grep Ethernet  103:00.0 Ethernet controller: Realtek Semiconductor Co., Ltd. Killer E3000 2.5GbE Controller (rev 06)    查看网卡加载">
+<meta property="og:type" content="article">
+<meta property="og:title" content="在PVE8中安装RTL8125网卡驱动">
+<meta property="og:url" content="http://example.com/2024/02/27/%E5%9C%A8PVE8%E4%B8%AD%E5%AE%89%E8%A3%85RTL8125%E7%BD%91%E5%8D%A1%E9%A9%B1%E5%8A%A8/index.html">
+<meta property="og:site_name" content="Hexo">
+<meta property="og:description" content="起因近期使用sensors命令查看CPU温度时，发现有一个核心的温度明显高于其他核心，连接数上升后温差更高。 排障获取网卡地址： 1lspci | grep Ethernet  103:00.0 Ethernet controller: Realtek Semiconductor Co., Ltd. Killer E3000 2.5GbE Controller (rev 06)    查看网卡加载">
+<meta property="og:locale" content="en_US">
+<meta property="article:published_time" content="2024-02-27T06:25:52.000Z">
+<meta property="article:modified_time" content="2024-02-27T06:25:52.191Z">
+<meta property="article:author" content="John Doe">
+<meta name="twitter:card" content="summary">
+  
+    <link rel="alternate" href="/atom.xml" title="Hexo" type="application/atom+xml">
+  
+  
+    <link rel="shortcut icon" href="/favicon.png">
+  
+  
+    
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/typeface-source-code-pro@0.0.71/index.min.css">
+
+  
+  
+<link rel="stylesheet" href="/css/style.css">
+
+  
+    
+<link rel="stylesheet" href="/fancybox/jquery.fancybox.min.css">
+
+  
+  
+<meta name="generator" content="Hexo 7.0.0"></head>
+
+<body>
+  <div id="container">
+    <div id="wrap">
+      <header id="header">
+  <div id="banner"></div>
+  <div id="header-outer" class="outer">
+    <div id="header-title" class="inner">
+      <h1 id="logo-wrap">
+        <a href="/" id="logo">Hexo</a>
+      </h1>
+      
+    </div>
+    <div id="header-inner" class="inner">
+      <nav id="main-nav">
+        <a id="main-nav-toggle" class="nav-icon"><span class="fa fa-bars"></span></a>
+        
+          <a class="main-nav-link" href="/">Home</a>
+        
+          <a class="main-nav-link" href="/archives">Archives</a>
+        
+      </nav>
+      <nav id="sub-nav">
+        
+        
+          <a class="nav-icon" href="/atom.xml" title="RSS Feed"><span class="fa fa-rss"></span></a>
+        
+        <a class="nav-icon nav-search-btn" title="Search"><span class="fa fa-search"></span></a>
+      </nav>
+      <div id="search-form-wrap">
+        <form action="//google.com/search" method="get" accept-charset="UTF-8" class="search-form"><input type="search" name="q" class="search-form-input" placeholder="Search"><button type="submit" class="search-form-submit">&#xF002;</button><input type="hidden" name="sitesearch" value="http://example.com"></form>
+      </div>
+    </div>
+  </div>
+</header>
+
+      <div class="outer">
+        <section id="main"><article id="post-在PVE8中安装RTL8125网卡驱动" class="h-entry article article-type-post" itemprop="blogPost" itemscope itemtype="https://schema.org/BlogPosting">
+  <div class="article-meta">
+    <a href="/2024/02/27/%E5%9C%A8PVE8%E4%B8%AD%E5%AE%89%E8%A3%85RTL8125%E7%BD%91%E5%8D%A1%E9%A9%B1%E5%8A%A8/" class="article-date">
+  <time class="dt-published" datetime="2024-02-27T06:25:52.000Z" itemprop="datePublished">2024-02-27</time>
+</a>
+    
+  </div>
+  <div class="article-inner">
+    
+    
+      <header class="article-header">
+        
+  
+    <h1 class="p-name article-title" itemprop="headline name">
+      在PVE8中安装RTL8125网卡驱动
+    </h1>
+  
+
+      </header>
+    
+    <div class="e-content article-entry" itemprop="articleBody">
+      
+        <h1 id="起因"><a href="#起因" class="headerlink" title="起因"></a>起因</h1><p>近期使用<code>sensors</code>命令查看CPU温度时，发现有一个核心的温度明显高于其他核心，连接数上升后温差更高。</p>
+<h1 id="排障"><a href="#排障" class="headerlink" title="排障"></a>排障</h1><p>获取网卡地址：</p>
+<figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">lspci | grep Ethernet</span><br></pre></td></tr></table></figure>
+
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">03:00.0 Ethernet controller: Realtek Semiconductor Co., Ltd. Killer E3000 2.5GbE Controller (rev 06)</span><br></pre></td></tr></table></figure>
+
+
+
+<p>查看网卡加载的驱动：</p>
+<figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">lspci -s 03:00.0 -k</span><br></pre></td></tr></table></figure>
+
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line">03:00.0 Ethernet controller: Realtek Semiconductor Co., Ltd. Killer E3000 2.5GbE Controller (rev 06)</span><br><span class="line">        Subsystem: ASRock Incorporation Killer E3000 2.5GbE Controller</span><br><span class="line">        Kernel driver in use: r8169</span><br><span class="line">        Kernel modules: r8169</span><br></pre></td></tr></table></figure>
+
+
+
+<p>查看网卡中断数量</p>
+<figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">cat /proc/interrupts | grep -P &#x27;enp3|CPU0&#x27; #我的网卡叫enp3s0</span><br></pre></td></tr></table></figure>
+
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">           CPU0	...	CPU3		...	CPU23</span><br><span class="line">181:          0	...	391472182	...	0  IR-PCI-MSIX-0000:03:00.0    0-edge      enp3s0</span><br></pre></td></tr></table></figure>
+
+
+
+<h1 id="分析"><a href="#分析" class="headerlink" title="分析"></a>分析</h1><p>这是一块瑞昱的2.5G板载网卡，且加载了<code>r8169</code>驱动，怀疑是RTL8125换皮。</p>
+<p>中断大量集中在单个核心上，默认的网卡驱动可能没有开启多队列支持。</p>
+<h1 id="准备"><a href="#准备" class="headerlink" title="准备"></a>准备</h1><h2 id="获取内核版本"><a href="#获取内核版本" class="headerlink" title="获取内核版本"></a>获取内核版本</h2><figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">uname -a</span><br></pre></td></tr></table></figure>
+
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">Linux *** 6.5.13-1-pve #1 SMP PREEMPT_DYNAMIC PMX 6.5.13-1 (2024-02-05T13:50Z) x86_64 GNU/Linux</span><br></pre></td></tr></table></figure>
+
+<p>可以看到我的是6.5版本的pve内核</p>
+<h2 id="安装依赖"><a href="#安装依赖" class="headerlink" title="安装依赖"></a>安装依赖</h2><figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">apt update</span><br><span class="line">apt install dkms proxmox-headers-6.5</span><br></pre></td></tr></table></figure>
+
+<h1 id="安装驱动"><a href="#安装驱动" class="headerlink" title="安装驱动"></a>安装驱动</h1><h2 id="快速安装"><a href="#快速安装" class="headerlink" title="快速安装"></a>快速安装</h2><p>已经有大佬编译打包好了驱动，启用了TX多队列和RSS，禁用了ASPM。<a target="_blank" rel="noopener" href="https://github.com/devome/realtek-r8125-dkms">devome&#x2F;realtek-r8125-dkms</a></p>
+<figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta prompt_">#</span><span class="language-bash">自行下载需要的deb包</span></span><br><span class="line">dpkg -i realtek-r8125-dkms_*_amd64.deb</span><br></pre></td></tr></table></figure>
+
+<h2 id="手动编译"><a href="#手动编译" class="headerlink" title="手动编译"></a>手动编译</h2><p><strong>⚠本节内容未经过验证，不保证可用，仅供参考⚠</strong></p>
+<h3 id="获取并解压源代码"><a href="#获取并解压源代码" class="headerlink" title="获取并解压源代码"></a>获取并解压源代码</h3><p>在<a target="_blank" rel="noopener" href="https://www.realtek.com/en/component/zoo/category/network-interface-controllers-10-100-1000m-gigabit-ethernet-pci-express-software">瑞昱驱动发布页</a>下载对应的驱动源码，并上传至目标主机。</p>
+<p>解压源码</p>
+<figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">tar -jxvf &lt;文件名&gt;</span><br></pre></td></tr></table></figure>
+
+<p>假设下载的源码是<code>r8125-9.012.04.tar.bz2</code></p>
+<figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">tar -jxvf r8125-9.012.04.tar.bz2</span><br></pre></td></tr></table></figure>
+
+<h3 id="参数修改"><a href="#参数修改" class="headerlink" title="参数修改"></a>参数修改</h3><p>修改<code>Makefile</code></p>
+<figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">nano ./r8125-9.012.04/src/Makefile</span><br></pre></td></tr></table></figure>
+
+<p>修改以下内容</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">CONFIG_ASPM = n</span><br><span class="line">ENABLE_MULTIPLE_TX_QUEUE = y</span><br><span class="line">ENABLE_RSS_SUPPORT = y</span><br></pre></td></tr></table></figure>
+
+<p>移动源码</p>
+<figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">mv ./r8125-9.012.04 /usr/src</span><br></pre></td></tr></table></figure>
+
+<h3 id="构建并安装"><a href="#构建并安装" class="headerlink" title="构建并安装"></a>构建并安装</h3><figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">dkms add -m r8125 -v 9.012.04</span><br><span class="line">dkms build -m r8125 -v 9.012.04</span><br><span class="line">dkms install -m r8125 -v 9.012.04</span><br></pre></td></tr></table></figure>
+
+<h1 id="配置"><a href="#配置" class="headerlink" title="配置"></a>配置</h1><p>禁用自带的<code>r8169</code>驱动</p>
+<figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">echo &quot;blacklist r8169&quot; &gt;&gt; /etc/modprobe.d/dkms.conf</span><br></pre></td></tr></table></figure>
+
+<p>应用修改并重启</p>
+<figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">update-grub</span><br><span class="line">update-initramfs -u -k all</span><br><span class="line">reboot</span><br></pre></td></tr></table></figure>
+
+<h1 id="效果"><a href="#效果" class="headerlink" title="效果"></a>效果</h1><figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line">lspci -s 03:00.0 -k</span><br><span class="line"></span><br><span class="line">03:00.0 Ethernet controller: Realtek Semiconductor Co., Ltd. Killer E3000 2.5GbE Controller (rev 06)</span><br><span class="line">        Subsystem: ASRock Incorporation Killer E3000 2.5GbE Controller</span><br><span class="line">        Kernel driver in use: r8125</span><br><span class="line">        Kernel modules: r8169, r8125</span><br></pre></td></tr></table></figure>
+
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br></pre></td><td class="code"><pre><span class="line">cat /proc/interrupts | grep -P &#x27;enp3|CPU0&#x27;</span><br><span class="line"></span><br><span class="line">           CPU0       ...       CPU3       CPU4       CPU5       CPU6       ...      CPU19      CPU20      CPU21      CPU22      CPU23</span><br><span class="line">181:          0       ...    1472182          0          0          0       ...          0          0          0          0          0  IR-PCI-MSIX-0000:03:00.0    0-edge      enp3s0-0</span><br><span class="line">182:          0       ...          0    1517626          0          0       ...          0          0          0          0          0  IR-PCI-MSIX-0000:03:00.0    1-edge      enp3s0-1</span><br><span class="line">183:          0       ...          0          0    1599632          0       ...          0          0          0          0          0  IR-PCI-MSIX-0000:03:00.0    2-edge      enp3s0-2</span><br><span class="line">184:          0       ...          0          0          0    1101283       ...          0          0          0          0          0  IR-PCI-MSIX-0000:03:00.0    3-edge      enp3s0-3</span><br><span class="line">...</span><br><span class="line">197:          0       ...          0          0          0          0       ...    4680739          0          0          0          0  IR-PCI-MSIX-0000:03:00.0   16-edge      enp3s0-16</span><br><span class="line">...</span><br><span class="line">199:          0       ...          0          0          0          0       ...          0          0    1512270          0          0  IR-PCI-MSIX-0000:03:00.0   18-edge      enp3s0-18</span><br><span class="line">...</span><br><span class="line">212:          0       ...          0          0          0          0       ...          0          0          0          0          0  IR-PCI-MSIX-0000:03:00.0   31-edge      enp3s0-31</span><br></pre></td></tr></table></figure>
+<p>可以看到中断确实分散在多个核心上，根据<a target="_blank" rel="noopener" href="https://www.right.com.cn/forum/thread-7446026-1-1.html">这个帖子</a>，队列配置是1RX&#x2F;2TX。</p>
+
+      
+    </div>
+    <footer class="article-footer">
+      <a data-url="http://example.com/2024/02/27/%E5%9C%A8PVE8%E4%B8%AD%E5%AE%89%E8%A3%85RTL8125%E7%BD%91%E5%8D%A1%E9%A9%B1%E5%8A%A8/" data-id="clt3zjdff0000wcv534v35ftj" data-title="在PVE8中安装RTL8125网卡驱动" class="article-share-link"><span class="fa fa-share">Share</span></a>
+      
+      
+      
+    </footer>
+  </div>
+  
+    
+<nav id="article-nav">
+  
+  
+    <a href="/2023/12/26/%E8%BD%AC-VPS%E8%84%9A%E6%9C%AC%E5%90%88%E9%9B%86%EF%BC%9A%E6%B5%8B%E9%80%9F%E3%80%81WARP%E3%80%81%E6%B5%81%E5%AA%92%E4%BD%93%E8%A7%A3%E9%94%81%E3%80%81%E6%80%A7%E8%83%BD%E6%B5%8B%E8%AF%95%E7%AD%89/" id="article-nav-older" class="article-nav-link-wrap">
+      <strong class="article-nav-caption">Older</strong>
+      <div class="article-nav-title">[转]VPS脚本合集：测速、WARP、流媒体解锁、性能测试等</div>
+    </a>
+  
+</nav>
+
+  
+</article>
+
+
+</section>
+        
+          <aside id="sidebar">
+  
+    
+
+  
+    
+
+  
+    
+  
+    
+  <div class="widget-wrap">
+    <h3 class="widget-title">Archives</h3>
+    <div class="widget">
+      <ul class="archive-list"><li class="archive-list-item"><a class="archive-list-link" href="/archives/2024/02/">February 2024</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2023/12/">December 2023</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2023/11/">November 2023</a></li></ul>
+    </div>
+  </div>
+
+
+  
+    
+  <div class="widget-wrap">
+    <h3 class="widget-title">Recent Posts</h3>
+    <div class="widget">
+      <ul>
+        
+          <li>
+            <a href="/2024/02/27/%E5%9C%A8PVE8%E4%B8%AD%E5%AE%89%E8%A3%85RTL8125%E7%BD%91%E5%8D%A1%E9%A9%B1%E5%8A%A8/">在PVE8中安装RTL8125网卡驱动</a>
+          </li>
+        
+          <li>
+            <a href="/2023/12/26/%E8%BD%AC-VPS%E8%84%9A%E6%9C%AC%E5%90%88%E9%9B%86%EF%BC%9A%E6%B5%8B%E9%80%9F%E3%80%81WARP%E3%80%81%E6%B5%81%E5%AA%92%E4%BD%93%E8%A7%A3%E9%94%81%E3%80%81%E6%80%A7%E8%83%BD%E6%B5%8B%E8%AF%95%E7%AD%89/">[转]VPS脚本合集：测速、WARP、流媒体解锁、性能测试等</a>
+          </li>
+        
+          <li>
+            <a href="/2023/11/05/%E6%B5%8B%E8%AF%95/">测试</a>
+          </li>
+        
+      </ul>
+    </div>
+  </div>
+
+  
+</aside>
+        
+      </div>
+      <footer id="footer">
+  
+  <div class="outer">
+    <div id="footer-info" class="inner">
+      
+      &copy; 2024 John Doe<br>
+      Powered by <a href="https://hexo.io/" target="_blank">Hexo</a>
+    </div>
+  </div>
+</footer>
+
+    </div>
+    <nav id="mobile-nav">
+  
+    <a href="/" class="mobile-nav-link">Home</a>
+  
+    <a href="/archives" class="mobile-nav-link">Archives</a>
+  
+</nav>
+    
+
+
+<script src="/js/jquery-3.6.4.min.js"></script>
+
+
+
+  
+<script src="/fancybox/jquery.fancybox.min.js"></script>
+
+
+
+
+<script src="/js/script.js"></script>
+
+
+
+
+
+  </div>
+</body>
+</html>
